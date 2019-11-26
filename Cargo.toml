@@ -1,0 +1,23 @@
+[package]
+name = "tokio-libevent"
+version = "0.1.0"
+authors = ["Jon Magnuson <jon.magnuson@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+futures = "0.1"
+libc = "0.2"
+libevent-sys = "0.2"
+mio = "0.6"
+tokio-current-thread = "0.1"
+tokio-io = "0.1"
+tokio-reactor = "0.1"
+
+[dependencies.tokio]
+version = "0.1"
+default-features = false
+features = [ "rt-full" ]
+
+
+[build-dependencies]
+cmake = "0.1"

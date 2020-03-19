@@ -74,8 +74,8 @@ impl EventLoopFd {
 fn to_timeval(duration: Duration) -> libevent_sys::timeval {
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "solaris"))]
     let tv = libevent_sys::timeval {
-        tv_sec: timeout.as_secs() as libevent_sys::__time_t,
-        tv_usec: timeout.subsec_micros() as libevent_sys::__suseconds_t,
+        tv_sec: duration.as_secs() as libevent_sys::__time_t,
+        tv_usec: duration.subsec_micros() as libevent_sys::__suseconds_t,
     };
 
     #[cfg(any(target_os = "bitrig", target_os = "dragonfly",

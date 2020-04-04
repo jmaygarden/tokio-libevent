@@ -190,6 +190,10 @@ impl Libevent {
         f(self.base.as_inner_mut())
     }
 
+    pub(crate) unsafe fn base(&self) -> &EventBase {
+        &self.base
+    }
+
     /// Turns the libevent base once.
     // TODO: any way to show if work was done?
     pub fn loop_once(&self) -> bool {
@@ -238,10 +242,11 @@ mod tests {
             .unwrap_or_else(|e| panic!("{:?}", e));
 
         let _ = unsafe { libevent.with_base(|base| {
-            mainc::mainc_init(base, fd as evutil_socket_t)
+            mainc::mainc_init(base)
         })};
 
-        let ughh = libevent.as_fd().fd;
+        //let ughh = libevent.as_fd().fd;
+        let ughh = unsafe { libevent.base().as_inner_mut() };
 
         let mut rt = Builder::new()
             .basic_scheduler()
@@ -268,9 +273,11 @@ mod tests {
 
         let fd = rt.driver_fd().unwrap();
 
-        let _ = unsafe { libevent.with_base(|base| {
+        let _ = unsafe { /*libevent.with_base(|base| {
             mainc::register_tokio(base, fd as evutil_socket_t)
-        })};
+        })*/
+            mainc::register_tokio(ughh, fd)
+        };
 
         let run_til_done = async move {
             //let libevent_ref = &libevent;

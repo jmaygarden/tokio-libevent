@@ -15,7 +15,9 @@ mio = "0.6"
 
 [dependencies.tokio]
 # path = "../tokio"
-version = "0.2"
+# version = "0.2"
+git = "https://github.com/jmagnuson/tokio"
+branch = "feature/park-shim"
 default-features = false
 features = [ "full" ]
 
@@ -23,5 +25,5 @@ features = [ "full" ]
 [build-dependencies]
 cmake = "0.1"
 
-[patch.crates-io]
-tokio = { git = "https://github.com/jmagnuson/tokio", branch = "feature/park-shim" }
+#[patch.crates-io]
+#tokio = { git = "https://github.com/jmagnuson/tokio", branch = "feature/park-shim" }

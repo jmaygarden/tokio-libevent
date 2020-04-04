@@ -226,8 +226,6 @@ mod tests {
         assert!(true);
 
         //let mut rt = Runtime::new().expect("failed to make the runtime");
-        let mut rt = Builder::new().basic_scheduler().enable_all().build().unwrap();
-
         println!("hi");
         let libevent = Libevent::new()
             .unwrap_or_else(|e| panic!("{:?}", e));
@@ -236,14 +234,40 @@ mod tests {
             dbg!(mainc::mainc_init(base))
         })};
 
+        let mut rt = Builder::new()
+            .basic_scheduler()
+            .enable_all()
+            .with_park(move |maybe_duration| {
+                let libevent_ref = &libevent;
+                let new_duration = if let Some(duration) = maybe_duration {
+                    let now = std::time::Instant::now();
+                    libevent_ref.loop_timeout(duration);
+
+                    let elapsed = now.elapsed();
+                    duration.checked_sub(elapsed).unwrap_or(Duration::from_secs(0))
+                    //Duration::from_secs(0)
+                } else {
+                    libevent_ref.loop_timeout(Duration::from_secs(1));
+
+                    Duration::from_secs(0)
+                };
+                //duration
+                Some(new_duration)
+            })
+            .build()
+            .unwrap();
+
+
         let run_til_done = async move {
-            let libevent_ref = &libevent;
+            //let libevent_ref = &libevent;
             loop {
-                libevent_ref.turn_once(Duration::from_millis(10)).await.unwrap();
-                //println!("hi");
-                tokio::task::yield_now().await;
+                //libevent_ref.turn_once(Duration::from_millis(10)).await.unwrap();
+                println!("hi");
+                tokio::time::delay_for(Duration::from_secs(5)).await;
+                //tokio::task::yield_now().await;
             }
-        }/*.map_err(|_| ())*/.map(|_| ());
+        }.map(|_| ());
+
         /*let run_til_done = loop_fn(libevent_ref, |evref| {
             evref.turn_once(Duration::from_millis(10))
                 .map(move |_| Loop::Continue(evref))

@@ -57,7 +57,16 @@ static void timer_cb_forever(evutil_socket_t fd, short event, void *ptr)
   printf("hi from forever callback\n");
 }
 
-int mainc_init(struct event_base *base)
+static void break_loop_cb(evutil_socket_t fd, short event, void *ptr)
+{
+  struct event* ev = (struct event*)ptr;
+
+  printf("breaking event loop\n");
+
+  event_base_loopbreak((struct event_base*)(ev->ev_base));
+}
+
+int mainc_init(struct event_base *base, evutil_socket_t tokio_fd)
 {
   //struct event_base *base = NULL;
 
@@ -70,11 +79,17 @@ int mainc_init(struct event_base *base)
 
   struct timeval one_sec = { 1, 0 };
   struct timeval hundred_ms = { 0, 100*1000 };
-  struct event *ev, *ev2;
+  struct event *ev, *ev2, *ev3;
   ev = event_new(base, -1, EV_PERSIST, timer_cb_forever, event_self_cbarg());
   event_add(ev, &one_sec);
   ev2 = event_new(base, -1, EV_PERSIST, timer_cb, event_self_cbarg());
   event_add(ev2, &hundred_ms);
+
+  if (tokio_fd != NULL)
+  {
+    ev3 = event_new(base, tokio_fd, (EV_READ | EV_PERSIST), break_loop_cb, event_self_cbarg());
+    event_add(ev3, NULL);
+  }
 
   return 0;
 }
@@ -95,3 +110,8 @@ int mainc_destroy(struct event_base* base)
 
   return 0;
 }
+
+/*int register_tokio(struct event_base* base, evutil_socket_t fd)
+{
+
+}*/

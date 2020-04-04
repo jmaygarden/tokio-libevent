@@ -7,7 +7,7 @@
 
 #include <event2/event.h>
 
-int mainc_init(struct event_base* base);
+int mainc_init(struct event_base* base, evutil_socket_t tokio_fd);
 int base_fd(const struct event_base* base);
 int mainc_destroy(struct event_base* base);
 

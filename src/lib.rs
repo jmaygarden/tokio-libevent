@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+//use std::os::unix::io::AsRawFd;
+
 use libevent_sys;
 use libc::c_int;
 
@@ -27,6 +29,8 @@ use std::time::Duration;
 
 #[allow(non_camel_case_types)]
 pub mod mainc;
+
+use mainc::evutil_socket_t;
 
 // TODO: impl Evented for &EventLoopFd instead
 #[derive(Clone, Copy)]
@@ -105,6 +109,9 @@ struct EventBase {
     evfd: EventLoopFd,
     base: *mut libevent_sys::event_base
 }
+
+unsafe impl Send for EventBase {}
+unsafe impl Sync for EventBase {}
 
 impl EventBase {
     pub fn new() -> Result<Self, io::Error> {
@@ -196,9 +203,9 @@ impl Libevent {
     // TODO: any way to show if work was done?
     pub fn loop_timeout(&self, timeout: Duration) -> bool {
         let _retval = self.base.loopexit(timeout);
-        dbg!(_retval);
+        //dbg!(_retval);
         let _retval = self.base.loop_(0i32);
-        dbg!(_retval);
+        //dbg!(_retval);
 
         true
     }
@@ -230,8 +237,10 @@ mod tests {
         let libevent = Libevent::new()
             .unwrap_or_else(|e| panic!("{:?}", e));
 
+        let fd = rt.driver_fd().unwrap();
+
         let _ = unsafe { libevent.with_base(|base| {
-            dbg!(mainc::mainc_init(base))
+            mainc::mainc_init(base, fd as evutil_socket_t)
         })};
 
         let mut rt = Builder::new()
@@ -256,7 +265,6 @@ mod tests {
             })
             .build()
             .unwrap();
-
 
         let run_til_done = async move {
             //let libevent_ref = &libevent;

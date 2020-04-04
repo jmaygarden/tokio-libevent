@@ -103,7 +103,7 @@ fn to_timeval(duration: Duration) -> libevent_sys::timeval {
 
 struct EventBase {
     evfd: EventLoopFd,
-    base: Box<*mut libevent_sys::event_base>,
+    base: *mut libevent_sys::event_base
 }
 
 impl EventBase {
@@ -133,7 +133,7 @@ impl EventBase {
 
         Ok(EventBase {
             evfd,
-            base: Box::new(base),
+            base,
         })
     }
 
@@ -142,16 +142,16 @@ impl EventBase {
     }
 
     pub fn as_inner(&self) -> *const libevent_sys::event_base {
-        *self.base as *const libevent_sys::event_base
+        self.base as *const libevent_sys::event_base
     }
 
     pub fn as_inner_mut(&self) -> *mut libevent_sys::event_base {
-        *self.base
+        self.base
     }
 
     pub fn loop_(&self, flags: i32) -> i32 {
         unsafe {
-            libevent_sys::event_base_loop(*self.base, flags) as i32
+            libevent_sys::event_base_loop(self.base, flags) as i32
         }
     }
 
@@ -159,7 +159,7 @@ impl EventBase {
         let tv = to_timeval(timeout);
         unsafe {
             let tv_cast = &tv as *const libevent_sys::timeval;
-            libevent_sys::event_base_loopexit(*self.base, tv_cast) as i32
+            libevent_sys::event_base_loopexit(self.base, tv_cast) as i32
         }
     }
 }

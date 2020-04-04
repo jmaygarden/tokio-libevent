@@ -216,12 +216,17 @@ impl Libevent {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::runtime::Builder;
+    use futures::future::{TryFutureExt, FutureExt};
+    //use futures_util::future::try_future::TryFutureExt;
 
-    #[tokio::test(basic_scheduler)]
-    async fn it_works() {
+    //#[tokio::test(basic_scheduler)]
+    #[test]
+    fn it_works() {
         assert!(true);
 
         //let mut rt = Runtime::new().expect("failed to make the runtime");
+        let mut rt = Builder::new().basic_scheduler().enable_all().build().unwrap();
 
         println!("hi");
         let libevent = Libevent::new()
@@ -231,20 +236,20 @@ mod tests {
             dbg!(mainc::mainc_init(base))
         })};
 
-        //let run_til_done = async move {
+        let run_til_done = async move {
             let libevent_ref = &libevent;
             loop {
                 libevent_ref.turn_once(Duration::from_millis(10)).await.unwrap();
                 //println!("hi");
                 tokio::task::yield_now().await;
             }
-        //};
+        }/*.map_err(|_| ())*/.map(|_| ());
         /*let run_til_done = loop_fn(libevent_ref, |evref| {
             evref.turn_once(Duration::from_millis(10))
                 .map(move |_| Loop::Continue(evref))
         }).map(|_: Loop<EventLoopFd, EventLoopFd>| ());*/
 
         //run_til_done.await;
-        //rt.block_on(run_til_done).await.expect("Oopsies");
+        rt.block_on(run_til_done); //.await.expect("Oopsies");
     }
 }

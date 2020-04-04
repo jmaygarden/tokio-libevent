@@ -187,7 +187,7 @@ impl Libevent {
     // TODO: any way to show if work was done?
     pub fn loop_once(&self) -> bool {
         let _retval = self.base.loop_(libevent_sys::EVLOOP_NONBLOCK as i32);
-        dbg!(_retval);
+        //dbg!(_retval);
 
         true
     }
@@ -204,10 +204,10 @@ impl Libevent {
     }
 
     pub async fn turn_once(&self, timeout: Duration) -> io::Result<()> {
-        println!("polling libevent");
-        let f = poll_fn(move |cx| self.base.as_fd().poll(cx));
-        f.await?;
-        println!("done polling libevent");
+        //println!("polling libevent");
+        //let f = poll_fn(move |cx| self.base.as_fd().poll(cx));
+        //f.await?;
+        //println!("done polling libevent");
         //tokio_timeout(timeout, poll_fn(move |cx| self.base.as_fd().poll(cx))).await??;
 
         self.loop_once();
@@ -238,7 +238,7 @@ mod tests {
             let libevent_ref = &libevent;
             loop {
                 libevent_ref.turn_once(Duration::from_millis(1000)).await.unwrap();
-                println!("hi");
+                //println!("hi");
                 tokio::task::yield_now().await;
             }
         //};

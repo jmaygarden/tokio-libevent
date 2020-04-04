@@ -1,26 +1,29 @@
+#![allow(dead_code)]
 
 use libevent_sys;
 use libc::c_int;
 
-use tokio::runtime::current_thread::Runtime;
-use tokio_reactor::PollEvented;
+//use tokio::runtime::current_thread::Runtime;
+use tokio::io::PollEvented;
+use tokio::time::timeout as tokio_timeout;
 
-use futures::try_ready;
-use futures::future::{self, Future, Loop, loop_fn, poll_fn};
+//use futures::try_ready;
+use futures::ready;
+use futures::future::poll_fn;
 
 use std::os::unix::io::RawFd;
-use std::io::Read;
 use mio::Ready;
 use mio::unix::EventedFd;
 use mio::Evented;
 use mio;
 
-use futures::{Async, Poll};
+//use futures::{Async, Poll};
 use std::io;
 
-use libc::timeval;
+use std::task;
 use std::time::Duration;
-use tokio::util::FutureExt;
+//use tokio::util::FutureExt;
+//use futures::future::FutureExt;
 
 #[allow(non_camel_case_types)]
 pub mod mainc;
@@ -50,24 +53,33 @@ impl Evented for EventLoopFd {
 }
 
 impl EventLoopFd {
-    pub fn poll(&self) -> Poll<(), io::Error> {
+    fn poll(
+        //mut self: Pin<&mut Self>,
+        &self,
+        cx: &mut task::Context<'_>,
+    ) -> task::Poll<io::Result<()>> {
         let ready = Ready::readable();
 
-        let pollev = PollEvented::new(*self);
+        let pollev = PollEvented::new(*self).unwrap();
 
-        try_ready!(pollev.poll_read_ready(ready));
+        let res = ready!(pollev.poll_read_ready(cx, ready))
+            .map(|_mio_ready| ());
 
         println!("got ready");
 
-        Ok(Async::Ready(()))
+        task::Poll::Ready(res)
 
         // TODO: RUN LIBEVENT, or from caller?
     }
 
-    pub fn clear_read_ready(&self) -> io::Result<()> {
+    pub fn clear_read_ready(
+        &self,
+        cx: &mut task::Context<'_>,
+    ) -> io::Result<()> {
         let ready = Ready::readable();
-        let pollev = PollEvented::new(*self);
-        pollev.clear_read_ready(ready)
+        let pollev = PollEvented::new(*self).unwrap();
+        pollev.clear_read_ready(cx, ready)
+            .map(|_mio_ready| ())
     }
 }
 
@@ -174,7 +186,8 @@ impl Libevent {
     /// Turns the libevent base once.
     // TODO: any way to show if work was done?
     pub fn loop_once(&self) -> bool {
-        let retval = self.base.loop_(libevent_sys::EVLOOP_NONBLOCK as i32);
+        let _retval = self.base.loop_(libevent_sys::EVLOOP_NONBLOCK as i32);
+        dbg!(_retval);
 
         true
     }
@@ -182,21 +195,24 @@ impl Libevent {
     /// Turns the libevent base until exit or timeout duration reached.
     // TODO: any way to show if work was done?
     pub fn loop_timeout(&self, timeout: Duration) -> bool {
-        let retval = self.base.loopexit(timeout);
-        let retval = self.base.loop_(0i32);
+        let _retval = self.base.loopexit(timeout);
+        dbg!(_retval);
+        let _retval = self.base.loop_(0i32);
+        dbg!(_retval);
 
         true
     }
 
-    pub fn turn_once(&self, timeout: Duration) -> impl Future<Item=(), Error=io::Error> + '_ {
-        poll_fn(move || self.base.as_fd().poll())
-            .timeout(timeout)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, "Timer timed out"))
-            .then(move |_| {
-                // Turn whether timed out or not
-                self.loop_once();
-                future::ok::<_, io::Error>(())
-            })
+    pub async fn turn_once(&self, timeout: Duration) -> io::Result<()> {
+        println!("polling libevent");
+        let f = poll_fn(move |cx| self.base.as_fd().poll(cx));
+        f.await?;
+        println!("done polling libevent");
+        //tokio_timeout(timeout, poll_fn(move |cx| self.base.as_fd().poll(cx))).await??;
+
+        self.loop_once();
+
+        Ok(())
     }
 }
 
@@ -204,26 +220,34 @@ impl Libevent {
 mod tests {
     use super::*;
 
-    #[test]
-    fn it_works() {
+    #[tokio::test(basic_scheduler)]
+    async fn it_works() {
         assert!(true);
 
-        let mut rt = Runtime::new().expect("failed to make the runtime");
+        //let mut rt = Runtime::new().expect("failed to make the runtime");
 
+        println!("hi");
         let libevent = Libevent::new()
             .unwrap_or_else(|e| panic!("{:?}", e));
 
         let _ = unsafe { libevent.with_base(|base| {
-            mainc::mainc_init(base)
+            dbg!(mainc::mainc_init(base))
         })};
 
-        let libevent_ref = &libevent;
-
-        let run_til_done = loop_fn(libevent_ref, |evref| {
+        //let run_til_done = async move {
+            let libevent_ref = &libevent;
+            loop {
+                libevent_ref.turn_once(Duration::from_millis(1000)).await.unwrap();
+                println!("hi");
+                tokio::task::yield_now().await;
+            }
+        //};
+        /*let run_til_done = loop_fn(libevent_ref, |evref| {
             evref.turn_once(Duration::from_millis(10))
                 .map(move |_| Loop::Continue(evref))
-        }).map(|_: Loop<EventLoopFd, EventLoopFd>| ());
+        }).map(|_: Loop<EventLoopFd, EventLoopFd>| ());*/
 
-        rt.block_on(run_til_done).expect("Oopsies");
+        //run_til_done.await;
+        //rt.block_on(run_til_done).await.expect("Oopsies");
     }
 }

@@ -237,11 +237,11 @@ mod tests {
         let libevent = Libevent::new()
             .unwrap_or_else(|e| panic!("{:?}", e));
 
-        let fd = rt.driver_fd().unwrap();
-
         let _ = unsafe { libevent.with_base(|base| {
             mainc::mainc_init(base, fd as evutil_socket_t)
         })};
+
+        let ughh = libevent.as_fd().fd;
 
         let mut rt = Builder::new()
             .basic_scheduler()
@@ -265,6 +265,12 @@ mod tests {
             })
             .build()
             .unwrap();
+
+        let fd = rt.driver_fd().unwrap();
+
+        let _ = unsafe { libevent.with_base(|base| {
+            mainc::register_tokio(base, fd as evutil_socket_t)
+        })};
 
         let run_til_done = async move {
             //let libevent_ref = &libevent;

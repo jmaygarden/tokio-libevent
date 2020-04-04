@@ -8,7 +8,8 @@ pub type evutil_socket_t = std::os::raw::c_int;
 
 #[link(name = "mainc")]
 extern "C" {
-    pub fn mainc_init(base: *mut libevent_sys::event_base, tokio_fd: evutil_socket_t) -> libc::c_int;
+    pub fn mainc_init(base: *mut libevent_sys::event_base) -> libc::c_int;
     pub fn base_fd(base: *const libevent_sys::event_base) -> libc::c_int;
     pub fn mainc_destroy(base: *mut libevent_sys::event_base) -> libc::c_int;
+    pub fn register_tokio(base: *mut libevent_sys::event_base, fd: evutil_socket_t) -> libc::c_int;
 }

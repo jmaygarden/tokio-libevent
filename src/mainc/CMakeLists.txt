@@ -17,7 +17,9 @@ conan_cmake_run(CONANFILE conanfile.txt
 # test using timerfd instead of timer wheel
 #set(USING_TIMERFD ON CACHE "" INTERNAL FORCE)
 
+include_directories(${CONAN_INCLUDE_DIRS})
 include_directories(.)
+
 add_library(mainc STATIC mainc.c)
 
 target_link_libraries(mainc ${CONAN_LIBS})

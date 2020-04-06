@@ -7,5 +7,5 @@ $ echo $PATH | grep ".local"
 ```
 
 ```
-$ LIBCLANG_PATH=/usr/lib/llvm/9/lib64 cargo test
+$ LIBCLANG_PATH=/usr/lib/llvm/9/lib64 cargo test -- --nocapture
 ```

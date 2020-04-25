@@ -1,7 +1,7 @@
 
 #include <event2/event_struct.h>
 
-#include "mainc.h"
+#include "helloc.h"
 
 #ifdef __APPLE__
 #include <sys/queue.h>
@@ -42,11 +42,11 @@ static void timer_cb(evutil_socket_t fd, short event, void *ptr)
 {
   struct event* ev = (struct event*)ptr;
 
-  printf("hi from callback\n");
+  printf("hi from temporary callback\n");
   if (++counter > 30)
   {
-    //event_base_loopbreak((struct event_base*)(ev->ev_base));
     event_del(ev);
+    event_free(ev);
   }
 }
 
@@ -76,12 +76,8 @@ int register_tokio(struct event_base *base, evutil_socket_t fd)
   }
 }
 
-int mainc_init(struct event_base *base)
+int helloc_init(struct event_base *base)
 {
-  //struct event_base *base = NULL;
-
-  //base = event_base_new();
-
   if (base != NULL)
   {
     printf("base ain't null after init\n");
@@ -103,7 +99,7 @@ int base_fd(const struct event_base* base)
   return ((struct kqop*)((struct event_base_internal*)base)->evbase)->kq;
 }
 
-int mainc_destroy(struct event_base* base)
+int helloc_destroy(struct event_base* base)
 {
   event_base_free(base);
 

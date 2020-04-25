@@ -1,8 +1,10 @@
 use tokio::runtime::Builder;
 use futures::future::{TryFutureExt, FutureExt};
 //use futures_util::future::try_future::TryFutureExt;
-use tokio_libevent::{Libevent, mainc};
+use tokio_libevent::{Libevent};
 use std::time::Duration;
+
+mod ffi;
 
 //#[tokio::test(basic_scheduler)]
 fn main() {
@@ -14,7 +16,7 @@ fn main() {
         .unwrap_or_else(|e| panic!("{:?}", e));
 
     let _ = unsafe { libevent.with_base(|base| {
-        mainc::mainc_init(base)
+        ffi::helloc_init(base)
     })};
 
     //let ughh = libevent.as_fd().fd;
@@ -48,14 +50,14 @@ fn main() {
     let _ = unsafe { /*libevent.with_base(|base| {
             mainc::register_tokio(base, fd as evutil_socket_t)
         })*/
-        mainc::register_tokio(ughh, fd)
+        ffi::register_tokio(ughh, fd)
     };
 
     let run_til_done = async move {
         //let libevent_ref = &libevent;
         loop {
             //libevent_ref.turn_once(Duration::from_millis(10)).await.unwrap();
-            println!("hi");
+            println!("hi from tokio");
             tokio::time::delay_for(Duration::from_secs(5)).await;
             //tokio::task::yield_now().await;
         }

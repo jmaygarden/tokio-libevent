@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-project(main-c)
+project(helloc)
 
 # copy-pasta from https://docs.conan.io/en/latest/howtos/cmake_launch.html
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
@@ -14,14 +14,11 @@ conan_cmake_run(CONANFILE conanfile.txt
         BASIC_SETUP CMAKE_TARGETS
         BUILD missing)
 
-# test using timerfd instead of timer wheel
-#set(USING_TIMERFD ON CACHE "" INTERNAL FORCE)
-
 include_directories(${CONAN_INCLUDE_DIRS})
-include_directories(.)
+include_directories(./src/ffi)
 
-add_library(mainc STATIC mainc.c)
+add_library(helloc STATIC src/ffi/helloc.c)
 
-target_link_libraries(mainc ${CONAN_LIBS})
+target_link_libraries(helloc ${CONAN_LIBS})
 
-install(TARGETS mainc DESTINATION .)
+install(TARGETS helloc DESTINATION .)

@@ -27,10 +27,8 @@ use std::time::Duration;
 //use tokio::util::FutureExt;
 //use futures::future::FutureExt;
 
-#[allow(non_camel_case_types)]
-pub mod mainc;
-
-use mainc::evutil_socket_t;
+// #[allow(non_camel_case_types)]
+pub mod evhack;
 
 // TODO: impl Evented for &EventLoopFd instead
 #[derive(Clone, Copy)]
@@ -127,7 +125,7 @@ impl EventBase {
         // TODO: check event_base_get_method
         let evfd = {
             let fd = unsafe {
-                mainc::base_fd(base)
+                evhack::base_fd(base)
             };
 
             // Provide some sanity checking on our insane cast

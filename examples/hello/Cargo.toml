@@ -1,20 +1,15 @@
 [package]
-name = "tokio-libevent"
+name = "hello"
 version = "0.1.0"
 authors = ["Jon Magnuson <jon.magnuson@gmail.com>"]
 edition = "2018"
 
-[workspace]
-members = ['examples/hello']
-
 [dependencies]
+libevent-sys = "0.2"
+tokio-libevent = { path = "../../" }
 futures = "0.3"
 libc = "0.2"
-libevent-sys = "0.2"
 mio = "0.6"
-#tokio-current-thread = "0.1"
-#tokio-io = "0.1"
-#tokio-reactor = "0.1"
 
 [dependencies.tokio]
 # path = "../tokio"
@@ -24,10 +19,5 @@ branch = "feature/park-shim"
 default-features = false
 features = [ "full" ]
 
-
 [build-dependencies]
 cmake = "0.1"
-cc = "1.0"
-
-#[patch.crates-io]
-#tokio = { git = "https://github.com/jmagnuson/tokio", branch = "feature/park-shim" }

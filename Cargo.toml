@@ -15,6 +15,7 @@ mio = "0.6"
 #tokio-current-thread = "0.1"
 #tokio-io = "0.1"
 #tokio-reactor = "0.1"
+libevent = { git = "https://github.com/jmagnuson/libevent-rs", branch = "hacking" }
 
 [dependencies.tokio]
 # path = "../tokio"

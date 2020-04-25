@@ -1,7 +1,7 @@
 use tokio::runtime::Builder;
 use futures::future::{TryFutureExt, FutureExt};
 //use futures_util::future::try_future::TryFutureExt;
-use tokio_libevent::{Libevent};
+use tokio_libevent::{TokioLibevent};
 use std::time::Duration;
 
 mod ffi;
@@ -12,30 +12,30 @@ fn main() {
 
     //let mut rt = Runtime::new().expect("failed to make the runtime");
     println!("hi");
-    let libevent = Libevent::new()
+    let libevent = TokioLibevent::new()
         .unwrap_or_else(|e| panic!("{:?}", e));
 
-    let _ = unsafe { libevent.with_base(|base| {
+    let _ = unsafe { libevent.inner().with_base(|base| {
         ffi::helloc_init(base)
     })};
 
     //let ughh = libevent.as_fd().fd;
-    let ughh = unsafe { libevent.base().as_inner_mut() };
+    let ughh = unsafe { libevent.inner().base().as_inner_mut() };
 
     let mut rt = Builder::new()
         .basic_scheduler()
         .enable_all()
         .with_park(move |maybe_duration| {
-            let libevent_ref = &libevent;
+            let libevent_ref = libevent.inner();
             let new_duration = if let Some(duration) = maybe_duration {
                 let now = std::time::Instant::now();
-                libevent_ref.loop_timeout(duration);
+                libevent_ref.run_timeout(duration);
 
                 let elapsed = now.elapsed();
                 duration.checked_sub(elapsed).unwrap_or(Duration::from_secs(0))
                 //Duration::from_secs(0)
             } else {
-                libevent_ref.loop_timeout(Duration::from_secs(1));
+                libevent_ref.run_timeout(Duration::from_secs(1));
 
                 Duration::from_secs(0)
             };

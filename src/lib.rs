@@ -2,6 +2,7 @@
 
 //use std::os::unix::io::AsRawFd;
 
+use libevent;
 use libevent_sys;
 use libc::c_int;
 
@@ -103,28 +104,20 @@ fn to_timeval(duration: Duration) -> libevent_sys::timeval {
     tv
 }
 
-pub struct EventBase {
+pub struct TokioLibevent {
+    inner: libevent::Libevent,
     evfd: EventLoopFd,
-    base: *mut libevent_sys::event_base
 }
 
-unsafe impl Send for EventBase {}
-unsafe impl Sync for EventBase {}
-
-impl EventBase {
+impl TokioLibevent {
     pub fn new() -> Result<Self, io::Error> {
-        let base = unsafe {
-            libevent_sys::event_base_new()
-            //mainc::mainc_init()
-        };
+        let inner = libevent::Libevent::new()?;
 
-        if base.is_null() {
-            return Err(io::Error::new(io::ErrorKind::Other, "Failed to create libevent base"));
-        }
 
-        // TODO: check event_base_get_method
         let evfd = {
+
             let fd = unsafe {
+                let base = inner.base().as_inner();
                 evhack::base_fd(base)
             };
 
@@ -136,87 +129,30 @@ impl EventBase {
             EventLoopFd { fd }
         };
 
-        Ok(EventBase {
+        Ok(TokioLibevent {
+            inner,
             evfd,
-            base,
         })
     }
 
-    pub fn as_fd(&self) -> &EventLoopFd {
+    pub fn inner(&self) -> &libevent::Libevent {
+        &self.inner
+    }
+
+    pub fn inner_mut(&mut self) -> &mut libevent::Libevent {
+        &mut self.inner
+    }
+
+    fn as_fd(&self) -> &EventLoopFd {
         &self.evfd
     }
 
-    pub fn as_inner(&self) -> *const libevent_sys::event_base {
-        self.base as *const libevent_sys::event_base
-    }
-
-    pub fn as_inner_mut(&self) -> *mut libevent_sys::event_base {
-        self.base
-    }
-
-    pub fn loop_(&self, flags: i32) -> i32 {
-        unsafe {
-            libevent_sys::event_base_loop(self.base, flags) as i32
-        }
-    }
-
-    pub fn loopexit(&self, timeout: Duration) -> i32 {
-        let tv = to_timeval(timeout);
-        unsafe {
-            let tv_cast = &tv as *const libevent_sys::timeval;
-            libevent_sys::event_base_loopexit(self.base, tv_cast) as i32
-        }
-    }
-}
-
-pub struct Libevent {
-    base: EventBase,
-}
-
-impl Libevent {
-    pub fn new() -> Result<Self, io::Error> {
-        EventBase::new()
-            .map(|base| Libevent { base })
-    }
-
-    pub unsafe fn with_base<F: Fn(*mut libevent_sys::event_base) -> c_int>(
-        &self,
-        f: F
-    ) -> libc::c_int
-    where
-    {
-        f(self.base.as_inner_mut())
-    }
-
-    pub/*(crate) TODO*/ unsafe fn base(&self) -> &EventBase {
-        &self.base
-    }
-
-    /// Turns the libevent base once.
-    // TODO: any way to show if work was done?
-    pub fn loop_once(&self) -> bool {
-        let _retval = self.base.loop_(libevent_sys::EVLOOP_NONBLOCK as i32);
-        //dbg!(_retval);
-
-        true
-    }
-
-    /// Turns the libevent base until exit or timeout duration reached.
-    // TODO: any way to show if work was done?
-    pub fn loop_timeout(&self, timeout: Duration) -> bool {
-        let _retval = self.base.loopexit(timeout);
-        //dbg!(_retval);
-        let _retval = self.base.loop_(0i32);
-        //dbg!(_retval);
-
-        true
-    }
-
+    // FIXME: not even used anymore...
     pub async fn turn_once(&self, timeout: Duration) -> io::Result<()> {
         // Either we timeout, or base has an event
-        let _ = tokio_timeout(timeout, poll_fn(move |cx| self.base.as_fd().poll(cx))).await;
+        let _ = tokio_timeout(timeout, poll_fn(move |cx| self.as_fd().poll(cx))).await;
 
-        self.loop_once();
+        self.inner().run_until_event();
 
         Ok(())
     }

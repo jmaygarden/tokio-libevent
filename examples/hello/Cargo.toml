@@ -5,11 +5,21 @@ authors = ["Jon Magnuson <jon.magnuson@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-libevent-sys = "0.2"
 tokio-libevent = { path = "../../" }
 futures = "0.3"
 libc = "0.2"
 mio = "0.6"
+
+[dependencies.libevent]
+#path = "../../"
+git = "https://github.com/jmagnuson/libevent-rs"
+branch = "hacking"
+
+# Needed to access headers, and create an FFI from C->Rust.
+[dependencies.libevent-sys]
+#path = "../../libevent-sys"
+git = "https://github.com/jmagnuson/libevent-rs"
+branch = "hacking"
 
 [dependencies.tokio]
 # path = "../tokio"

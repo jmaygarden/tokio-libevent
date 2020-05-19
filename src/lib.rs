@@ -152,7 +152,7 @@ impl TokioLibevent {
         // Either we timeout, or base has an event
         let _ = tokio_timeout(timeout, poll_fn(move |cx| self.as_fd().poll(cx))).await;
 
-        self.inner().run_until_event();
+        self.inner().run_until_event(None);
 
         Ok(())
     }

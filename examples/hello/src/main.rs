@@ -4,6 +4,10 @@ use futures::future::{TryFutureExt, FutureExt};
 use tokio_libevent::{TokioLibevent};
 use std::time::Duration;
 
+struct BaseWrapper(pub TokioLibevent);
+unsafe impl Send for BaseWrapper {}
+unsafe impl Sync for BaseWrapper {}
+
 mod ffi;
 
 //#[tokio::test(basic_scheduler)]
@@ -12,21 +16,23 @@ fn main() {
 
     //let mut rt = Runtime::new().expect("failed to make the runtime");
     println!("hi");
-    let libevent = TokioLibevent::new()
-        .unwrap_or_else(|e| panic!("{:?}", e));
+    let mut libevent = BaseWrapper(
+        TokioLibevent::new()
+        .unwrap_or_else(|e| panic!("{:?}", e))
+    );
 
-    let _ = unsafe { libevent.inner().with_base(|base| {
+    let _ = unsafe { libevent.0.inner_mut().with_base(|base| {
         ffi::helloc_init(base)
     })};
 
     //let ughh = libevent.as_fd().fd;
-    let ughh = unsafe { libevent.inner().base().as_inner_mut() };
+    let ughh = unsafe { libevent.0.inner_mut().base_mut().as_inner_mut() };
 
     let mut rt = Builder::new()
         .basic_scheduler()
         .enable_all()
         .with_park(move |maybe_duration| {
-            let libevent_ref = libevent.inner();
+            let libevent_ref = libevent.0.inner_mut();
             let new_duration = if let Some(duration) = maybe_duration {
                 libevent_ref.run_until_event(Some(duration));
 

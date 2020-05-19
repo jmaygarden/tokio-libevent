@@ -2,9 +2,20 @@ use tokio::runtime::Builder;
 use futures::future::{TryFutureExt, FutureExt};
 //use futures_util::future::try_future::TryFutureExt;
 use tokio_libevent::{TokioLibevent};
+use tokio::park::Unpark;
 use std::time::Duration;
 
 struct BaseWrapper(pub TokioLibevent);
+
+impl BaseWrapper {
+    pub fn inner(&self) -> &TokioLibevent {
+        &self.0
+    }
+    pub fn inner_mut(&mut self) -> &mut TokioLibevent {
+        &mut self.0
+    }
+}
+
 unsafe impl Send for BaseWrapper {}
 unsafe impl Sync for BaseWrapper {}
 
@@ -36,19 +47,33 @@ fn main() {
             let new_duration = if let Some(duration) = maybe_duration {
                 libevent_ref.run_until_event(Some(duration));
 
-                Duration::from_secs(0)
+                // Some(Duration::from_secs(0))
+                None
             } else {
                 libevent_ref.run_until_event(Some(Duration::from_secs(1)));
 
-                Duration::from_secs(0)
+                // Some(Duration::from_secs(0))
+                None
             };
-            //duration
-            Some(new_duration)
+            new_duration
+            // Some(new_duration)
         })
         .build()
         .unwrap();
 
     let fd = rt.driver_fd().unwrap();
+    let handle = rt.handle().clone();
+
+    let mut a: usize = 0;
+
+    let _ev = libevent.inner_mut().inner_mut().add_interval(
+        Duration::from_secs(6),
+        move |_ev, _flags| {
+            a += 1;
+            handle.driver_handle().unpark();
+            println!("interval count: {}, flags: {:?}", a, _flags);
+        }
+    );
 
     let _ = unsafe { ffi::register_tokio(ughh, fd) };
 

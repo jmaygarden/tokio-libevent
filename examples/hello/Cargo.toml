@@ -22,12 +22,15 @@ git = "https://github.com/jmagnuson/libevent-rs"
 branch = "hacking"
 
 [dependencies.tokio]
-# path = "../tokio"
-# version = "0.2"
-git = "https://github.com/jmagnuson/tokio"
-branch = "feature/park-shim"
+path = "../../../tokio/tokio"
+version = "0.2"
+#git = "https://github.com/jmagnuson/tokio"
+#branch = "feature/park-shim"
 default-features = false
 features = [ "full" ]
 
 [build-dependencies]
 cmake = "0.1"
+
+#[patch.crates-io]
+#tokio = { path = "../../tokio/tokio" }

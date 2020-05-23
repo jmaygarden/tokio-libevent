@@ -71,7 +71,7 @@ int register_tokio(struct event_base *base, evutil_socket_t fd)
   struct event *ev;
   if (fd != NULL)
   {
-    ev = event_new(base, fd, (EV_READ | EV_PERSIST), break_loop_cb, event_self_cbarg());
+    ev = event_new(base, fd, (EV_READ | EV_PERSIST | EV_ET), break_loop_cb, event_self_cbarg());
     event_add(ev, NULL);
   }
 }

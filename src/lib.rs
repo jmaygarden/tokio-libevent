@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(missing_docs)]
 
 //use std::os::unix::io::AsRawFd;
 
@@ -30,6 +31,7 @@ use std::time::Duration;
 
 // #[allow(non_camel_case_types)]
 pub mod evhack;
+pub mod waker;
 
 // TODO: impl Evented for &EventLoopFd instead
 #[derive(Clone, Copy)]

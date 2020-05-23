@@ -10,7 +10,6 @@ members = ['examples/hello']
 [dependencies]
 futures = "0.3"
 libc = "0.2"
-mio = "0.6"
 
 [dependencies.libevent]
 #path = "../../"
@@ -24,12 +23,17 @@ git = "https://github.com/jmagnuson/libevent-rs"
 branch = "hacking"
 
 [dependencies.tokio]
-path = "../tokio/tokio"
+#path = "../tokio/tokio"
 version = "0.2"
-#git = "https://github.com/jmagnuson/tokio"
-#branch = "feature/park-shim"
+git = "https://github.com/jmagnuson/tokio"
+branch = "feature/park-shim"
 default-features = false
 features = [ "full" ]
+
+[dependencies.mio]
+#path = "../mio"
+version = "0.6"
+features = [ "with-deprecated" ]
 
 
 [build-dependencies]
@@ -37,4 +41,5 @@ cmake = "0.1"
 cc = "1.0"
 
 #[patch.crates-io]
+#mio = { path = "../mio" }
 #tokio = { path = "../tokio/tokio" }

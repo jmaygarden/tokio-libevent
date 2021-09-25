@@ -1,16 +1,16 @@
-CFLAGS += -Iinclude
+CFLAGS = -Wall -Werror `pkg-config --cflags libevent`
 TARGET = target/debug
 LIBS = \
 	-L$(TARGET) \
 	-ltokio_libevent
 
-all: time-test
+all: $(TARGET)/time-test
 
-hello-world: sample/hello-world.c
+$(TARGET)/hello-world: sample/hello-world.c
 	$(CC) $(CFLAGS) -o $@ $(LIBS) $<
 
-time-test: sample/time-test.c
+$(TARGET)/time-test: sample/time-test.c
 	$(CC) $(CFLAGS) -o $@ $(LIBS) $<
 
 clean:
-	$(RM) hello-world
+	$(RM) $(TARGET)/hello-world $(TARGET)/time-test

@@ -1,9 +1,9 @@
 use super::{event::Event, libevent};
+use std::time::Duration;
 use tokio::{
     io::{unix::AsyncFd, Interest},
     runtime::{Builder, Runtime},
 };
-use std::time::Duration;
 
 pub struct EventBase {
     runtime: Runtime,
@@ -19,7 +19,6 @@ impl EventBase {
             unimplemented!();
         } else {
             self.runtime.spawn(async move {
-                let timeout = event.timeout.map(tokio::time::sleep);
                 let read = if event.is_read() {
                     AsyncFd::with_interest(event.fd, Interest::READABLE).ok()
                 } else {
@@ -31,20 +30,28 @@ impl EventBase {
                     None
                 };
 
-                tokio::select! {
-                    _ = timeout.expect("invalid Timeout"), if timeout.is_some() => {
-                        event.callback.map(|callback| unsafe {callback(event.fd, libevent::EV_TIMEOUT as libc::c_short, event.callback_arg)});
-                    },
-                    result = read.as_ref().expect("invalid AsyncFd").readable(), if read.is_some() => {
-                        if let Ok(_guard) = result {
-                            event.callback.map(|callback| unsafe {callback(event.fd, libevent::EV_READ as libc::c_short, event.callback_arg)});
-                        }
-                    },
-                    result = write.as_ref().expect("invalid AsyncFd").writable(), if write.is_some() => {
-                        if let Ok(_guard) = result {
-                            event.callback.map(|callback| unsafe {callback(event.fd, libevent::EV_WRITE as libc::c_short, event.callback_arg)});
-                        }
-                    },
+                loop {
+                    let timeout = event.timeout.map(tokio::time::sleep);
+
+                    tokio::select! {
+                        _ = timeout.expect("invalid Timeout"), if timeout.is_some() => {
+                            event.callback.map(|callback| unsafe {callback(event.fd, libevent::EV_TIMEOUT as libc::c_short, event.callback_arg)});
+                        },
+                        result = async { read.as_ref().expect("invalid AsyncFd").readable().await }, if read.is_some() => {
+                            if let Ok(_guard) = result {
+                                event.callback.map(|callback| unsafe {callback(event.fd, libevent::EV_READ as libc::c_short, event.callback_arg)});
+                            }
+                        },
+                        result = async { write.as_ref().expect("invalid AsyncFd").writable().await }, if write.is_some() => {
+                            if let Ok(_guard) = result {
+                                event.callback.map(|callback| unsafe {callback(event.fd, libevent::EV_WRITE as libc::c_short, event.callback_arg)});
+                            }
+                        },
+                    }
+
+                    if !event.is_persistant() {
+                        break;
+                    }
                 }
             });
         }

@@ -6,11 +6,16 @@ LIBS = \
 
 all: $(TARGET)/time-test
 
-$(TARGET)/hello-world: sample/hello-world.c
+$(TARGET)/hello-world: sample/hello-world.c $(TARGET)/libtokio_libevent.a
 	$(CC) $(CFLAGS) -o $@ $(LIBS) $<
 
-$(TARGET)/time-test: sample/time-test.c
+$(TARGET)/time-test: sample/time-test.c $(TARGET)/libtokio_libevent.a
 	$(CC) $(CFLAGS) -o $@ $(LIBS) $<
+
+$(TARGET)/libtokio_libevent.a: FORCE
+	cargo build
+
+FORCE: ;
 
 clean:
 	$(RM) $(TARGET)/hello-world $(TARGET)/time-test

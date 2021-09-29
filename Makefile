@@ -3,13 +3,14 @@ TARGET = target/debug
 LIBS = \
 	-L$(TARGET) \
 	-ltokio_libevent
+SAMPLES_SRC = \
+	libevent/sample/hello-world.c \
+	libevent/sample/time-test.c
+SAMPLES_BIN = $(patsubst %.c,%,$(SAMPLES_SRC))
 
-all: $(TARGET)/time-test
+all: $(SAMPLES_BIN)
 
-$(TARGET)/hello-world: sample/hello-world.c $(TARGET)/libtokio_libevent.a
-	$(CC) $(CFLAGS) -o $@ $(LIBS) $<
-
-$(TARGET)/time-test: sample/time-test.c $(TARGET)/libtokio_libevent.a
+%: %.c $(TARGET)/libtokio_libevent.a
 	$(CC) $(CFLAGS) -o $@ $(LIBS) $<
 
 $(TARGET)/libtokio_libevent.a: FORCE
@@ -18,4 +19,4 @@ $(TARGET)/libtokio_libevent.a: FORCE
 FORCE: ;
 
 clean:
-	$(RM) $(TARGET)/hello-world $(TARGET)/time-test
+	$(RM) $(SAMPLES_BIN)
